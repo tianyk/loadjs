@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoadJS</title>
+    <!-- https://www.hangge.com/blog/cache/detail_1702.html -->
+</head>
+
+<body>
+
+    <!-- <script src="js/require.js" data-main="js/main"></script> -->
+    <script src="https://lib.baomitu.com/require.js/2.3.6/require.min.js"></script>
+
+    <script>
+        require.config({
+            baseUrl: 'js',
+            paths: {
+                add: 'add-fail',
+                double: 'double'
+            }
+        });
+
+        require([
+            'double'
+        ], (double) => {
+            console.log('a * 2 =', double(1))
+        }, (err) => {
+            console.error(err.requireType, err)
+            var failedId = err.requireModules && err.requireModules[0];
+            // console.log("" + failedId + " " + err.originalError.target.src);
+            if (failedId === 'add') {
+                // 通过undef方法让所有依赖`add`的模块都暂不加载，直到正确的`add`被加载。
+                require.undef(failedId);
+
+                // 重新设置备用路径
+                require.config({
+                    paths: {
+                        add: 'add'
+                    }
+                });
+
+                // 再次尝试加载 `add`，如果再次失败则报错
+                require(['add'], function () { }, function () { console.log('重新加载失败。'); });
+            } else {
+                //Some other error. Maybe show message to the user.
+            }
+        });
+
+        require.onError = function (err) {
+            console.log(err.requireType);
+            if (err.requireType === 'timeout') {
+                console.log('modules: ' + err.requireModules);
+            }
+        };
+    </script>
+</body>
+
+</html>
